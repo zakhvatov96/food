@@ -36,7 +36,7 @@ window.addEventListener('DOMContentLoaded', () => {
 		}
 	});
 
-});
+
 
 // Timer
 
@@ -190,35 +190,36 @@ class MenuCard {
 	}
 }
 
-new MenuCard('img/tabs/vegy.jpg',
-	'vegy',
-	'Меню "Фитнес"',
-	'Меню "Фитнес" - это новый подход к приготовлению блюд: больше свежих овощей и фруктов. Продукт активных и здоровых людей. Это абсолютно новый продукт с оптимальной ценой и высоким качеством!',
-	9,
-	'.menu .container').render();
+const getResource = async (url) => {
+	const res = await fetch(url);
 
-	new MenuCard('img/tabs/elite.jpg',
-	'elite',
-	'Меню "Премиум"',
-	'В меню “Премиум” мы используем не только красивый дизайн упаковки, но и качественное исполнение блюд. Красная рыба, морепродукты, фрукты - ресторанное меню без похода в ресторан!',
-	11,
-	'.menu .container').render();
+	if(!res.ok) {
+		throw new Error(`Could not fetch ${url}, status: ${res.status}`);
+	}
 
-	new MenuCard('img/tabs/post.jpg',
-	'post',
-	'Меню "Постное"',
-	'Меню “Постное” - это тщательный подбор ингредиентов: полное отсутствие продуктов животного происхождения, молоко из миндаля, овса, кокоса или гречки, правильное количество белков за счет тофу и импортных вегетарианских стейков.',
-	13,
-	'.menu .container').render();
+	return await res.json();
+};
 
+	// getResource('http://localhost:3000/menu')
+	// 	.then(data => {
+	// 		data.forEach(({img, altimg, title, descr, price})=>{
+	// 			new MenuCard(img, altimg, title, descr, price, '.menu .container').render();
+	// 		});
+	// 	});
 
+	axios.get('http://localhost:3000/menu')
+		.then(res=>{
+			res.data.forEach(({img, altimg, title, descr, price})=> {
+				new MenuCard(img, altimg, title, descr, price, '.menu .container').render();
+			});
+		});
 
 	// Forms
 
 const forms = document.querySelectorAll('form');
 
 forms.forEach(form => {
-	postData(form);
+	bindPostData(form);
 });
 
 const message = {
@@ -228,7 +229,20 @@ const message = {
 };
 
 
-function postData (form) {
+const postData = async (url, data) => {
+	const res = await fetch(url, {
+		method: 'POST',
+			body: data,
+			headers: {
+				'Content-type': 'application/json'
+			}
+	});
+
+	return await res.json();
+};
+
+
+function bindPostData (form) {
 	form.addEventListener('submit', (e) => {
 		e.preventDefault();
 
@@ -244,19 +258,10 @@ function postData (form) {
 		const formData = new FormData(form);
 
 
-		const object = {};
+		const json = JSON.stringify(Object.fromEntries(formData.entries()));
 
-		formData.forEach((key, value) => {
-			object[key] = value;
-		});
-
-	fetch('server.php', {
-			method: 'POST',
-			body: JSON.stringify(object),
-			headers: {
-				'Content-type': 'application/json'
-			}
-		}).then(data => data.text()).then(data => {
+		postData('http://localhost:3000/requests', json)
+		.then(data => {
 			console.log(data);
 			showThanksModal(message.success);
 			statusMessage.remove();
@@ -290,3 +295,62 @@ function showThanksModal(message) {
 		closeModal();
 	}, 4000);
 }
+
+	fetch('http://localhost:3000/menu')
+		.then(data=>data.json())
+		.then(res=>console.log(res));
+
+});
+
+// Slider
+
+const slides = document.querySelectorAll('.offer__slide'),
+	  prevBtn = document.querySelector('.offer__slider-prev'),
+	  nextBtn = document.querySelector('.offer__slider-next'),
+	  current = document.querySelector('#current'),
+	  total = document.querySelector('#total');
+
+let slideIndex = 1;
+
+showSlides(slideIndex);
+
+if(slides.length < 10) {
+	total.textContent = `0${slides.length}`;
+} else {
+	total.textContent = slides.length;
+}
+
+
+function showSlides(n) {
+	if(n > slides.length) {
+		slideIndex = 1;
+	}
+
+	if(n<1) {
+		slideIndex = slides.length;
+	}
+
+	slides.forEach(slide => slide.style.display = 'none');
+	slides[slideIndex-1].style.display = 'block';
+
+	if (slideIndex < 10) {
+		current.textContent = `0${slideIndex}`;
+	} else {
+		current.textContent = slideIndex;
+	}
+
+}
+
+function plusSlide(n) {
+	showSlides(slideIndex+=n);
+}
+
+prevBtn.addEventListener('click', () => {
+	plusSlide(-1);
+});
+
+nextBtn.addEventListener('click', () => {
+	plusSlide(1);
+});
+
+

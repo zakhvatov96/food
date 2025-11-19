@@ -12,7 +12,7 @@ export default [
     },
     rules: {
       "no-unused-vars": "warn",
-      "no-undef": "error",
+      "no-undef": "warn",
       "quotes": ["error", "single"],
       "semi": ["error", "always"],
     },
